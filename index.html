@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Economia Escolar Digital</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 20px; }
+        .card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .saldo { font-size: 24px; color: #2ecc71; font-weight: bold; }
+        button { padding: 8px 15px; margin: 5px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .admin { background-color: #f8f9fa; }
+        .negativo { color: #e74c3c; }
+    </style>
+</head>
+<body>
+    <h1>Economia Escolar Digital</h1>
+    
+    <div class="card" id="loginSection">
+        <h2>Login</h2>
+        <select id="tipoUsuario">
+            <option value="aluno">Aluno</option>
+            <option value="professor">Professor/Admin</option>
+        </select>
+        <input type="text" id="matricula" placeholder="Matrícula">
+        <button onclick="login()">Entrar</button>
+    </div>
+    
+    <div class="card" id="alunoSection" style="display:none;">
+        <h2>Minha Carteira Digital</h2>
+        <p>Aluno: <span id="nomeAluno"></span> | Turma: <span id="turmaAluno"></span></p>
+        <p>Saldo: <span id="saldoAluno" class="saldo">0.00</span> ED (Ecoins Digitais)</p>
+        
+        <h3>Mercado Escolar</h3>
+        <div id="produtos"></div>
+    </div>
+    
+    <div class="card admin" id="adminSection" style="display:none;">
+        <h2>Painel do Professor</h2>
+        <div>
+            <h3>Adicionar Saldo</h3>
+            <select id="alunosLista"></select>
+            <input type="number" id="valorAdicao" placeholder="Valor" min="1">
+            <input type="text" id="motivoAdicao" placeholder="Motivo (ex: Boa nota)">
+            <button onclick="adicionarSaldo()">Adicionar</button>
+        </div>
+        
+        <div>
+            <h3>Histórico de Transações</h3>
+            <table id="historicoTransacoes">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Matrícula</th>
+                        <th>Tipo</th>
+                        <th>Valor</th>
+                        <th>Descrição</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Substitua pela URL do seu Apps Script publicado
+        const API_URL = "https://script.google.com/macros/s/AKfycbxY7ZPjCfmJ-GU8tge76cKHpAqqy29K09ZWn6HxEgTrO1kLk0DY82tpdBxHdJmCXIw/exec";
+        let usuarioLogado = null;
+        
+        async function login() {
+            const matricula = document.getElementById('matricula').value;
+            const tipoUsuario = document.getElementById('tipoUsuario').value;
+            
+            if (!matricula) {
+                alert("Digite uma matrícula válida");
+                return;
+            }
+            
+            const alunos = await fetchData('Alunos');
+            usuarioLogado = alunos.find(a => a[0] == matricula);
+            
+            if (!usuarioLogado) {
+                alert("Matrícula não encontrada");
+                return;
+            }
+            
+            document.getElementById('loginSection').style.display = 'none';
+            
+            if (tipoUsuario === 'aluno') {
+                document.getElementById('alunoSection').style.display = 'block';
+                carregarDadosAluno();
+                carregarProdutos();
+            } else {
+                document.getElementById('adminSection').style.display = 'block';
+                carregarAlunosSelect();
+                carregarHistorico();
+            }
+        }
+        
+        async function fetchData(sheetName) {
+            const response = await fetch(`${API_URL}?sheetName=${sheetName}`);
+            return await response.json();
+        }
+        
+        function carregarDadosAluno() {
+            document.getElementById('nomeAluno').textContent = usuarioLogado[1];
+            document.getElementById('turmaAluno').textContent = usuarioLogado[2];
+            document.getElementById('saldoAluno').textContent = usuarioLogado[3] || '0.00';
+            
+            if (parseFloat(usuarioLogado[3] || 0) < 0) {
+                document.getElementById('saldoAluno').classList.add('negativo');
+            }
+        }
+        
+        async function carregarProdutos() {
+            const produtos = await fetchData('Produtos');
+            const produtosDiv = document.getElementById('produtos');
+            produtosDiv.innerHTML = '';
+            
+            const table = document.createElement('table');
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Produto</th>
+                        <th>Preço</th>
+                        <th>Estoque</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            `;
+            
+            const tbody = table.querySelector('tbody');
+            
+            produtos.slice(1).forEach(produto => {
+                if (produto[3] > 0) { // Tem estoque
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${produto[1]}</td>
+                        <td>${produto[2]} ED</td>
+                        <td>${produto[3]}</td>
+                        <td><button onclick="comprarProduto('${produto[0]}', ${produto[2]}, '${produto[1]}')">Comprar</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+            });
+            
+            produtosDiv.appendChild(table);
+        }
+        
+        async function comprarProduto(idProduto, preco, nomeProduto) {
+            if (confirm(`Deseja comprar ${nomeProduto} por ${preco} ED?`)) {
+                if (parseFloat(usuarioLogado[3] || 0) < preco) {
+                    alert("Saldo insuficiente!");
+                    return;
+                }
+                
+                const params = new URLSearchParams();
+                params.append('matricula', usuarioLogado[0]);
+                params.append('valor', preco);
+                params.append('descricao', `Compra: ${nomeProduto}`);
+                params.append('autor', 'Sistema');
+                
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: params
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    alert("Compra realizada com sucesso!");
+                    location.reload();
+                }
+            }
+        }
+        
+        // Funções do Professor/Admin
+        async function carregarAlunosSelect() {
+            const alunos = await fetchData('Alunos');
+            const select = document.getElementById('alunosLista');
+            
+            alunos.slice(1).forEach(aluno => {
+                const option = document.createElement('option');
+                option.value = aluno[0];
+                option.textContent = `${aluno[1]} (${aluno[2]}) - Saldo: ${aluno[3] || 0} ED`;
+                select.appendChild(option);
+            });
+        }
+        
+        async function adicionarSaldo() {
+            const matricula = document.getElementById('alunosLista').value;
+            const valor = document.getElementById('valorAdicao').value;
+            const motivo = document.getElementById('motivoAdicao').value;
+            
+            if (!matricula || !valor || !motivo) {
+                alert("Preencha todos os campos");
+                return;
+            }
+            
+            const params = new URLSearchParams();
+            params.append('matricula', matricula);
+            params.append('valor', valor);
+            params.append('descricao', `Adição de saldo: ${motivo}`);
+            params.append('autor', usuarioLogado[1]);
+            
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                body: params
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                alert("Saldo adicionado com sucesso!");
+                location.reload();
+            }
+        }
+        
+        async function carregarHistorico() {
+            const transacoes = await fetchData('Transações');
+            const tbody = document.querySelector('#historicoTransacoes tbody');
+            tbody.innerHTML = '';
+            
+            transacoes.slice(1).reverse().forEach(trans => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${trans[0]}</td>
+                    <td>${trans[1]}</td>
+                    <td>${trans[2]}</td>
+                    <td>${trans[3]} ED</td>
+                    <td>${trans[4]}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>
