@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Economia Escolar Digital</title>
+    <title>Economia Escolar Digital DE - CAIEIRAS 2025</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 20px; }
         .card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
@@ -16,7 +16,7 @@
     </style>
 </head>
 <body>
-    <h1>Economia Escolar Digital</h1>
+    <h1>Economia Escolar Digital DE - CAIEIRAS 2025</h1>
     
     <div class="card" id="loginSection">
         <h2>Login</h2>
@@ -150,33 +150,82 @@
             produtosDiv.appendChild(table);
         }
         
-        async function comprarProduto(idProduto, preco, nomeProduto) {
-            if (confirm(`Deseja comprar ${nomeProduto} por ${preco} ED?`)) {
-                if (parseFloat(usuarioLogado[3] || 0) < preco) {
-                    alert("Saldo insuficiente!");
-                    return;
-                }
-                
-                const params = new URLSearchParams();
-                params.append('matricula', usuarioLogado[0]);
-                params.append('valor', preco);
-                params.append('descricao', `Compra: ${nomeProduto}`);
-                params.append('autor', 'Sistema');
-                
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    body: params
-                });
-                
-                const result = await response.json();
-                
-                if (result.status === 'success') {
-                    alert("Compra realizada com sucesso!");
-                    location.reload();
-                }
-            }
+       async function comprarProduto(idProduto, preco, nomeProduto) {
+    if (confirm(`Deseja comprar ${nomeProduto} por ${preco} ED?`)) {
+        if (parseFloat(usuarioLogado[3] || 0) < preco) {
+            alert("Saldo insuficiente!");
+            return;
         }
         
+        const params = new URLSearchParams();
+        params.append('matricula', usuarioLogado[0]);
+        params.append('valor', preco);
+        params.append('descricao', `Compra: ${nomeProduto}`);
+        params.append('autor', 'Sistema');
+        params.append('produtoId', idProduto); // Adiciona o ID do produto
+        
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                body: params
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                alert("Compra realizada com sucesso!");
+                location.reload(); // Recarrega para atualizar saldo e estoque
+            }
+        } catch (error) {
+            console.error("Erro na compra:", error);
+            alert("Erro ao processar compra");
+        }
+    }
+}
+        async function carregarProdutos() {
+    const produtos = await fetchData('Produtos');
+    const produtosDiv = document.getElementById('produtos');
+    produtosDiv.innerHTML = '';
+    
+    const table = document.createElement('table');
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th>Produto</th>
+                <th>Preço</th>
+                <th>Estoque</th>
+                <th>Ação</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    `;
+    
+    const tbody = table.querySelector('tbody');
+    
+    produtos.slice(1).forEach(produto => {
+        const tr = document.createElement('tr');
+        const estoque = parseInt(produto[3]) || 0;
+        
+        tr.innerHTML = `
+            <td>${produto[1]}</td>
+            <td>${produto[2]} ED</td>
+            <td>${estoque}</td>
+            <td>
+                ${estoque > 0 ? 
+                    `<button onclick="comprarProduto('${produto[0]}', ${produto[2]}, '${produto[1]}')">Comprar</button>` : 
+                    'ESGOTADO'}
+            </td>
+        `;
+        
+        if (estoque <= 0) {
+            tr.style.opacity = '0.6';
+        }
+        
+        tbody.appendChild(tr);
+    });
+    
+    produtosDiv.appendChild(table);
+}
         // Funções do Professor/Admin
         async function carregarAlunosSelect() {
             const alunos = await fetchData('Alunos');
