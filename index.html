@@ -1,289 +1,435 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Economia Escolar Digital DE - CAIEIRAS 2025</title>
+    <title>Economia Escolar Digital- DE CAIEIRAS 2025</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 20px; }
-        .card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        .saldo { font-size: 24px; color: #2ecc71; font-weight: bold; }
-        button { padding: 8px 15px; margin: 5px; background-color: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .admin { background-color: #f8f9fa; }
-        .negativo { color: #e74c3c; }
+        .produto-card {
+            transition: transform 0.3s;
+            height: 100%;
+        }
+        .produto-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .produto-img {
+            height: 150px;
+            object-fit: contain;
+        }
+        .sacola-item {
+            border-bottom: 1px solid #eee;
+            padding: 10px 0;
+        }
+        .nav-tabs .nav-link.active {
+            font-weight: bold;
+            border-bottom: 3px solid #0d6efd;
+        }
+        .saldo-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
-    <h1>Economia Escolar Digital DE - CAIEIRAS 2025</h1>
-    
-    <div class="card" id="loginSection">
-        <h2>Login</h2>
-        <select id="tipoUsuario">
-            <option value="aluno">Aluno</option>
-            <option value="professor">Professor/Admin</option>
-        </select>
-        <input type="text" id="matricula" placeholder="Matrícula">
-        <button onclick="login()">Entrar</button>
-    </div>
-    
-    <div class="card" id="alunoSection" style="display:none;">
-        <h2>Minha Carteira Digital</h2>
-        <p>Aluno: <span id="nomeAluno"></span> | Turma: <span id="turmaAluno"></span></p>
-        <p>Saldo: <span id="saldoAluno" class="saldo">0.00</span> ED (Ecoins Digitais)</p>
-        
-        <h3>Mercado Escolar</h3>
-        <div id="produtos"></div>
-    </div>
-    
-    <div class="card admin" id="adminSection" style="display:none;">
-        <h2>Painel do Professor</h2>
-        <div>
-            <h3>Adicionar Saldo</h3>
-            <select id="alunosLista"></select>
-            <input type="number" id="valorAdicao" placeholder="Valor" min="1">
-            <input type="text" id="motivoAdicao" placeholder="Motivo (ex: Boa nota)">
-            <button onclick="adicionarSaldo()">Adicionar</button>
+    <div class="container py-4">
+        <!-- Cabeçalho -->
+        <header class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">Economia Escolar Digital-DE CAIEIRAS 2025</h1>
+            <div id="userInfo" class="d-none">
+                <span id="userName" class="fw-bold"></span>
+                <span id="userTurma" class="badge bg-primary ms-2"></span>
+                <button class="btn btn-sm btn-outline-danger ms-3" onclick="logout()">Sair</button>
+            </div>
+        </header>
+
+        <!-- Login -->
+        <div id="loginSection" class="card p-4 mb-4">
+            <h2 class="mb-3">Login</h2>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <select id="tipoUsuario" class="form-select">
+                        <option value="aluno">Aluno</option>
+                        <option value="professor">Professor</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" id="matricula" class="form-control" placeholder="Matrícula">
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-primary w-100" onclick="login()">Entrar</button>
+                </div>
+            </div>
         </div>
-        
-        <div>
-            <h3>Histórico de Transações</h3>
-            <table id="historicoTransacoes">
-                <thead>
-                    <tr>
-                        <th>Data</th>
-                        <th>Matrícula</th>
-                        <th>Tipo</th>
-                        <th>Valor</th>
-                        <th>Descrição</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+
+        <!-- Painel do Aluno -->
+        <div id="alunoSection" class="d-none">
+            <div class="card p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1">Minha Carteira</h2>
+                        <div class="saldo-display">
+                            Saldo: <span id="saldoAluno" class="text-success">0.00</span> CC
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="carregarSacola()">
+                            Atualizar Sacola
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <ul class="nav nav-tabs mb-4" id="alunoTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="mercado-tab" data-bs-toggle="tab" data-bs-target="#mercado" type="button">
+                        Mercado Escolar
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="sacola-tab" data-bs-toggle="tab" data-bs-target="#sacola" type="button">
+                        Minha Sacola <span id="sacolaBadge" class="badge bg-primary rounded-pill">0</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="historico-tab" data-bs-toggle="tab" data-bs-target="#historico" type="button">
+                        Meu Histórico
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="alunoTabsContent">
+                <!-- Mercado -->
+                <div class="tab-pane fade show active" id="mercado" role="tabpanel">
+                    <div class="row g-4" id="produtosContainer">
+                        <div class="col-12 text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Carregando...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sacola -->
+                <div class="tab-pane fade" id="sacola" role="tabpanel">
+                    <div class="card">
+                        <div class="card-body">
+                            <h3 class="card-title">Itens Adquiridos</h3>
+                            <div id="sacolaContainer" class="mt-3">
+                                <p class="text-muted">Nenhum item na sacola ainda</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Histórico -->
+                <div class="tab-pane fade" id="historico" role="tabpanel">
+                    <div class="card">
+                        <div class="card-body">
+                            <h3 class="card-title">Minhas Transações</h3>
+                            <div class="table-responsive">
+                                <table class="table" id="historicoTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Data</th>
+                                            <th>Descrição</th>
+                                            <th>Valor</th>
+                                            <th>Produto</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel do Professor -->
+        <div id="professorSection" class="d-none">
+            <!-- Conteúdo do painel do professor -->
         </div>
     </div>
 
+    <!-- Modal de Compra -->
+    <div class="modal fade" id="compraModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmar Compra</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Você está comprando <strong id="modalProdutoNome"></strong> por <strong id="modalProdutoPreco"></strong> CC</p>
+                    <p>Saldo após a compra: <strong id="modalSaldoPos"></strong> CC</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmarCompra()">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Substitua pela URL do seu Apps Script publicado
+        // Configurações
         const API_URL = "https://script.google.com/macros/s/AKfycbxY7ZPjCfmJ-GU8tge76cKHpAqqy29K09ZWn6HxEgTrO1kLk0DY82tpdBxHdJmCXIw/exec";
         let usuarioLogado = null;
-        
+        let produtoSelecionado = null;
+        const modalCompra = new bootstrap.Modal(document.getElementById('compraModal'));
+
+        // Funções principais
         async function login() {
-            const matricula = document.getElementById('matricula').value;
+            const matricula = document.getElementById('matricula').value.trim();
             const tipoUsuario = document.getElementById('tipoUsuario').value;
             
             if (!matricula) {
-                alert("Digite uma matrícula válida");
+                alert("Por favor, informe sua matrícula");
                 return;
             }
             
-            const alunos = await fetchData('Alunos');
-            usuarioLogado = alunos.find(a => a[0] == matricula);
-            
-            if (!usuarioLogado) {
-                alert("Matrícula não encontrada");
-                return;
-            }
-            
-            document.getElementById('loginSection').style.display = 'none';
-            
-            if (tipoUsuario === 'aluno') {
-                document.getElementById('alunoSection').style.display = 'block';
-                carregarDadosAluno();
-                carregarProdutos();
-            } else {
-                document.getElementById('adminSection').style.display = 'block';
-                carregarAlunosSelect();
-                carregarHistorico();
-            }
-        }
-        
-        async function fetchData(sheetName) {
-            const response = await fetch(`${API_URL}?sheetName=${sheetName}`);
-            return await response.json();
-        }
-        
-        function carregarDadosAluno() {
-            document.getElementById('nomeAluno').textContent = usuarioLogado[1];
-            document.getElementById('turmaAluno').textContent = usuarioLogado[2];
-            document.getElementById('saldoAluno').textContent = usuarioLogado[3] || '0.00';
-            
-            if (parseFloat(usuarioLogado[3] || 0) < 0) {
-                document.getElementById('saldoAluno').classList.add('negativo');
-            }
-        }
-        
-        async function carregarProdutos() {
-            const produtos = await fetchData('Produtos');
-            const produtosDiv = document.getElementById('produtos');
-            produtosDiv.innerHTML = '';
-            
-            const table = document.createElement('table');
-            table.innerHTML = `
-                <thead>
-                    <tr>
-                        <th>Produto</th>
-                        <th>Preço</th>
-                        <th>Estoque</th>
-                        <th>Ação</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            `;
-            
-            const tbody = table.querySelector('tbody');
-            
-            produtos.slice(1).forEach(produto => {
-                if (produto[3] > 0) { // Tem estoque
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${produto[1]}</td>
-                        <td>${produto[2]} ED</td>
-                        <td>${produto[3]}</td>
-                        <td><button onclick="comprarProduto('${produto[0]}', ${produto[2]}, '${produto[1]}')">Comprar</button></td>
-                    `;
-                    tbody.appendChild(tr);
+            try {
+                if (tipoUsuario === 'aluno') {
+                    const response = await fetch(`${API_URL}?sheetName=AlunoSacola&matricula=${matricula}`);
+                    const data = await response.json();
+                    
+                    if (data.error) throw new Error(data.error);
+                    
+                    usuarioLogado = data;
+                    exibirPainelAluno();
+                    carregarProdutos();
+                    carregarSacola();
+                    carregarHistorico();
+                } else {
+                    // Lógica para professor
                 }
-            });
-            
-            produtosDiv.appendChild(table);
-        }
-        
-       async function comprarProduto(idProduto, preco, nomeProduto) {
-    if (confirm(`Deseja comprar ${nomeProduto} por ${preco} ED?`)) {
-        if (parseFloat(usuarioLogado[3] || 0) < preco) {
-            alert("Saldo insuficiente!");
-            return;
-        }
-        
-        const params = new URLSearchParams();
-        params.append('matricula', usuarioLogado[0]);
-        params.append('valor', preco);
-        params.append('descricao', `Compra: ${nomeProduto}`);
-        params.append('autor', 'Sistema');
-        params.append('produtoId', idProduto); // Adiciona o ID do produto
-        
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                body: params
-            });
-            
-            const result = await response.json();
-            
-            if (result.status === 'success') {
-                alert("Compra realizada com sucesso!");
-                location.reload(); // Recarrega para atualizar saldo e estoque
+                
+                document.getElementById('loginSection').classList.add('d-none');
+                document.getElementById('userInfo').classList.remove('d-none');
+                document.getElementById('userName').textContent = usuarioLogado.nome;
+                document.getElementById('userTurma').textContent = usuarioLogado.turma;
+                
+            } catch (error) {
+                console.error("Erro no login:", error);
+                alert("Erro ao fazer login: " + error.message);
             }
-        } catch (error) {
-            console.error("Erro na compra:", error);
-            alert("Erro ao processar compra");
         }
-    }
-}
+        
+        function logout() {
+            usuarioLogado = null;
+            document.getElementById('loginSection').classList.remove('d-none');
+            document.getElementById('alunoSection').classList.add('d-none');
+            document.getElementById('professorSection').classList.add('d-none');
+            document.getElementById('userInfo').classList.add('d-none');
+            document.getElementById('matricula').value = '';
+        }
+        
+        function exibirPainelAluno() {
+            document.getElementById('alunoSection').classList.remove('d-none');
+            document.getElementById('saldoAluno').textContent = usuarioLogado.saldo.toFixed(2);
+        }
+        
+        // Funções de Produtos
         async function carregarProdutos() {
-    const produtos = await fetchData('Produtos');
-    const produtosDiv = document.getElementById('produtos');
-    produtosDiv.innerHTML = '';
-    
-    const table = document.createElement('table');
-    table.innerHTML = `
-        <thead>
-            <tr>
-                <th>Produto</th>
-                <th>Preço</th>
-                <th>Estoque</th>
-                <th>Ação</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    `;
-    
-    const tbody = table.querySelector('tbody');
-    
-    produtos.slice(1).forEach(produto => {
-        const tr = document.createElement('tr');
-        const estoque = parseInt(produto[3]) || 0;
-        
-        tr.innerHTML = `
-            <td>${produto[1]}</td>
-            <td>${produto[2]} ED</td>
-            <td>${estoque}</td>
-            <td>
-                ${estoque > 0 ? 
-                    `<button onclick="comprarProduto('${produto[0]}', ${produto[2]}, '${produto[1]}')">Comprar</button>` : 
-                    'ESGOTADO'}
-            </td>
-        `;
-        
-        if (estoque <= 0) {
-            tr.style.opacity = '0.6';
-        }
-        
-        tbody.appendChild(tr);
-    });
-    
-    produtosDiv.appendChild(table);
-}
-        // Funções do Professor/Admin
-        async function carregarAlunosSelect() {
-            const alunos = await fetchData('Alunos');
-            const select = document.getElementById('alunosLista');
+            const container = document.getElementById('produtosContainer');
+            container.innerHTML = '<div class="col-12 text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando...</span></div></div>';
             
-            alunos.slice(1).forEach(aluno => {
-                const option = document.createElement('option');
-                option.value = aluno[0];
-                option.textContent = `${aluno[1]} (${aluno[2]}) - Saldo: ${aluno[3] || 0} ED`;
-                select.appendChild(option);
-            });
-        }
-        
-        async function adicionarSaldo() {
-            const matricula = document.getElementById('alunosLista').value;
-            const valor = document.getElementById('valorAdicao').value;
-            const motivo = document.getElementById('motivoAdicao').value;
-            
-            if (!matricula || !valor || !motivo) {
-                alert("Preencha todos os campos");
-                return;
-            }
-            
-            const params = new URLSearchParams();
-            params.append('matricula', matricula);
-            params.append('valor', valor);
-            params.append('descricao', `Adição de saldo: ${motivo}`);
-            params.append('autor', usuarioLogado[1]);
-            
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                body: params
-            });
-            
-            const result = await response.json();
-            
-            if (result.status === 'success') {
-                alert("Saldo adicionado com sucesso!");
-                location.reload();
+            try {
+                const response = await fetch(`${API_URL}?sheetName=Produtos`);
+                const produtos = await response.json();
+                
+                if (produtos.error) throw new Error(produtos.error);
+                
+                container.innerHTML = '';
+                
+                produtos.slice(1).forEach(produto => {
+                    if (produto[0] && produto[3] > 0) { // Tem ID e estoque
+                        const card = document.createElement('div');
+                        card.className = 'col-md-4 mb-4';
+                        card.innerHTML = `
+                            <div class="card produto-card h-100">
+                                <img src="${produto[5] || 'https://via.placeholder.com/150'}" class="card-img-top produto-img p-3" alt="${produto[1]}">
+                                <div class="card-body">
+                                    <h5 class="card-title">${produto[1]}</h5>
+                                    <p class="card-text">${produto[4] || 'Sem categoria'}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="badge bg-primary rounded-pill">${produto[3]} em estoque</span>
+                                        <span class="fw-bold">${produto[2]} ED</span>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <button class="btn btn-primary w-100" onclick="prepararCompra('${produto[0]}', ${produto[2]}, '${produto[1]}')">
+                                        Comprar
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        container.appendChild(card);
+                    }
+                });
+                
+                if (container.children.length === 0) {
+                    container.innerHTML = '<div class="col-12 text-center text-muted">Nenhum produto disponível no momento</div>';
+                }
+                
+            } catch (error) {
+                console.error("Erro ao carregar produtos:", error);
+                container.innerHTML = '<div class="col-12 text-center text-danger">Erro ao carregar produtos</div>';
             }
         }
         
+        function prepararCompra(id, preco, nome) {
+            produtoSelecionado = { id, preco, nome };
+            
+            document.getElementById('modalProdutoNome').textContent = nome;
+            document.getElementById('modalProdutoPreco').textContent = preco;
+            document.getElementById('modalSaldoPos').textContent = (usuarioLogado.saldo - preco).toFixed(2);
+            
+            modalCompra.show();
+        }
+        
+        async function confirmarCompra() {
+            if (!produtoSelecionado || !usuarioLogado) return;
+            
+            modalCompra.hide();
+            
+            try {
+                const params = new URLSearchParams();
+                params.append('matricula', usuarioLogado.matricula);
+                params.append('valor', produtoSelecionado.preco);
+                params.append('descricao', `Compra: ${produtoSelecionado.nome}`);
+                params.append('autor', 'Sistema');
+                params.append('produtoId', produtoSelecionado.id);
+                params.append('operacao', 'compra');
+                
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: params
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    alert(`Compra de ${produtoSelecionado.nome} realizada com sucesso!`);
+                    
+                    // Atualiza os dados locais
+                    usuarioLogado.saldo = result.novoSaldo;
+                    usuarioLogado.sacola.push({
+                        id: produtoSelecionado.id,
+                        nome: produtoSelecionado.nome,
+                        preco: produtoSelecionado.preco,
+                        data: new Date().toISOString(),
+                        imagem: produtoSelecionado.imagem
+                    });
+                    
+                    // Atualiza a UI
+                    document.getElementById('saldoAluno').textContent = usuarioLogado.saldo.toFixed(2);
+                    carregarSacola();
+                    carregarProdutos();
+                    
+                } else {
+                    throw new Error(result.message || 'Erro na compra');
+                }
+                
+            } catch (error) {
+                console.error("Erro na compra:", error);
+                alert("Erro ao processar compra: " + error.message);
+            }
+        }
+        
+        // Funções da Sacola
+        async function carregarSacola() {
+            const container = document.getElementById('sacolaContainer');
+            const badge = document.getElementById('sacolaBadge');
+            
+            try {
+                // Atualiza os dados do servidor
+                const response = await fetch(`${API_URL}?sheetName=AlunoSacola&matricula=${usuarioLogado.matricula}`);
+                const data = await response.json();
+                
+                if (data.error) throw new Error(data.error);
+                
+                usuarioLogado = data;
+                badge.textContent = usuarioLogado.sacola.length;
+                
+                if (usuarioLogado.sacola.length === 0) {
+                    container.innerHTML = '<p class="text-muted">Nenhum item na sacola ainda</p>';
+                    return;
+                }
+                
+                container.innerHTML = '';
+                
+                // Ordena por data (mais recente primeiro)
+                const sacolaOrdenada = [...usuarioLogado.sacola].sort((a, b) => 
+                    new Date(b.data) - new Date(a.data));
+                
+                sacolaOrdenada.forEach(item => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'sacola-item row align-items-center';
+                    itemDiv.innerHTML = `
+                        <div class="col-2">
+                            <img src="${item.imagem || 'https://via.placeholder.com/50'}" 
+                                 class="img-thumbnail" style="width: 50px; height: 50px;">
+                        </div>
+                        <div class="col-6">
+                            <h6 class="mb-1">${item.nome}</h6>
+                            <small class="text-muted">Comprado em ${new Date(item.data).toLocaleDateString()}</small>
+                        </div>
+                        <div class="col-4 text-end">
+                            <span class="badge bg-secondary">${item.preco} ED</span>
+                        </div>
+                    `;
+                    container.appendChild(itemDiv);
+                });
+                
+            } catch (error) {
+                console.error("Erro ao carregar sacola:", error);
+                container.innerHTML = '<div class="alert alert-danger">Erro ao carregar sacola</div>';
+            }
+        }
+        
+        // Funções do Histórico
         async function carregarHistorico() {
-            const transacoes = await fetchData('Transações');
-            const tbody = document.querySelector('#historicoTransacoes tbody');
+            const tbody = document.querySelector('#historicoTable tbody');
             tbody.innerHTML = '';
             
-            transacoes.slice(1).reverse().forEach(trans => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${trans[0]}</td>
-                    <td>${trans[1]}</td>
-                    <td>${trans[2]}</td>
-                    <td>${trans[3]} ED</td>
-                    <td>${trans[4]}</td>
-                `;
-                tbody.appendChild(tr);
-            });
+            try {
+                const response = await fetch(`${API_URL}?sheetName=Transações`);
+                const transacoes = await response.json();
+                
+                if (transacoes.error) throw new Error(transacoes.error);
+                
+                // Filtra apenas as transações do aluno e ordena por data
+                const historico = transacoes
+                    .slice(1)
+                    .filter(t => t[1] === usuarioLogado.matricula)
+                    .sort((a, b) => new Date(b[0]) - new Date(a[0]));
+                
+                if (historico.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-muted text-center">Nenhuma transação encontrada</td></tr>';
+                    return;
+                }
+                
+                historico.forEach(transacao => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${new Date(transacao[0]).toLocaleDateString()}</td>
+                        <td>${transacao[4]}</td>
+                        <td class="${transacao[2] === 'CRÉDITO' ? 'text-success' : 'text-danger'}">
+                            ${transacao[2] === 'CRÉDITO' ? '+' : '-'}${transacao[3]} ED
+                        </td>
+                        <td>${transacao[5] || '-'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                
+            } catch (error) {
+                console.error("Erro ao carregar histórico:", error);
+                tbody.innerHTML = '<tr><td colspan="4" class="text-danger text-center">Erro ao carregar histórico</td></tr>';
+            }
         }
     </script>
 </body>
